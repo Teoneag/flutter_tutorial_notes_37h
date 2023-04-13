@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:developer' as devtools show log;
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:notes_t_37h_2/constants/routes.dart';
+import '../utilities/show_error.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -58,19 +59,38 @@ class _LoginViewState extends State<LoginView> {
               final password = _password.text;
               try {
                 await FirebaseAuth.instance.signInWithEmailAndPassword(
-                    email: email, password: password);
+                  email: email,
+                  password: password,
+                );
                 Navigator.of(context).pushNamedAndRemoveUntil(
                   notesRoute,
                   (route) => false,
                 );
               } on FirebaseAuthException catch (e) {
-                if (e.code == 'user-not-found') {
-                  devtools.log('User not found');
-                  devtools.log(e.code);
-                } else if (e.code == 'wrong-password') {
-                  devtools.log('Wrong password');
-                  devtools.log(e.code);
+                switch (e.code) {
+                  case 'user-not-found':
+                    await showErrorDialog(
+                      context,
+                      'User was not found, please register!',
+                    );
+                    break;
+                  case 'wrong-password':
+                    await showErrorDialog(
+                      context,
+                      'Wrong password, please try again!',
+                    );
+                    break;
+                  default:
+                    await showErrorDialog(
+                      context,
+                      'Error: ${e.code}',
+                    );
                 }
+              } catch (e) {
+                await showErrorDialog(
+                  context,
+                  '$e',
+                );
               }
             },
             child: const Text('Login'),
@@ -83,7 +103,7 @@ class _LoginViewState extends State<LoginView> {
               );
             },
             child: const Text('Not registered yet? Register here!'),
-          )
+          ),
         ],
       ),
     );
