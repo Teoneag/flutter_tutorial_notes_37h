@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:notes_t_37h_2/constants/routes.dart';
+import '/constants/routes.dart';
+import '/services/auth/auth_exceptions.dart';
+import '/services/auth/auth_service.dart';
 import '../utilities/show_error.dart';
 
 class LoginView extends StatefulWidget {
@@ -58,12 +59,12 @@ class _LoginViewState extends State<LoginView> {
               final email = _email.text;
               final password = _password.text;
               try {
-                await FirebaseAuth.instance.signInWithEmailAndPassword(
+                await AuthService.firebase().logIn(
                   email: email,
                   password: password,
                 );
-                final user = FirebaseAuth.instance.currentUser;
-                if (user?.emailVerified ?? false) {
+                final user = AuthService.firebase().currentUser;
+                if (user?.isEmailVerified ?? false) {
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     notesRoute,
                     (route) => false,
@@ -74,30 +75,20 @@ class _LoginViewState extends State<LoginView> {
                     (route) => false,
                   );
                 }
-              } on FirebaseAuthException catch (e) {
-                switch (e.code) {
-                  case 'user-not-found':
-                    await showErrorDialog(
-                      context,
-                      'User was not found, please register!',
-                    );
-                    break;
-                  case 'wrong-password':
-                    await showErrorDialog(
-                      context,
-                      'Wrong password, please try again!',
-                    );
-                    break;
-                  default:
-                    await showErrorDialog(
-                      context,
-                      'Error: ${e.code}',
-                    );
-                }
-              } catch (e) {
+              } on UserNotFoundAuthException {
                 await showErrorDialog(
                   context,
-                  '$e',
+                  'User was not found, please register!',
+                );
+              } on WrongPasswordAuthException {
+                await showErrorDialog(
+                  context,
+                  'Wrong password, please try again!',
+                );
+              } on GenericAuthException {
+                await showErrorDialog(
+                  context,
+                  'Authentication error',
                 );
               }
             },
