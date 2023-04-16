@@ -119,14 +119,11 @@ class NotesService {
   Future<DatabaseNote> createNote({required DatabaseUser owner}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-
     // make sure owner exists in the database with the correct id
-
     final dbUser = await getUser(email: owner.email);
     if (dbUser != owner) {
       throw CouldNotFindUser();
     }
-
     const text = '';
     // create note
     final noteId = await db.insert(noteTable, {
@@ -134,17 +131,14 @@ class NotesService {
       textColumn: text,
       isSyncedWithClaudColumn: 1,
     });
-
     final note = DatabaseNote(
       id: noteId,
       userId: owner.id,
       text: text,
       isSyncedWithCloud: true,
     );
-
     _notes.add(note);
     _notesStreamController.add(_notes);
-
     return note;
   }
 
@@ -309,14 +303,14 @@ const userIdColumn = 'user_id';
 const textColumn = 'text';
 const isSyncedWithClaudColumn = 'is_synced_with_cloud';
 const createNotesTable = '''CREATE TABLE IF NOT EXISTS "note" (
-        "id"	INTEGER NOT NULL,
+        "id" INTEGER PRIMARY KEY AUTOINCREMENT,
         "user_id"	INTEGER NOT NULL,
         "text"	TEXT,
         "is_synced_with_cloud"	INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY("user_id") REFERENCES "User"("id")
       );''';
 const createUserTable = '''CREATE TABLE IF NOT EXISTS "user" (
-        "id"	INTEGER NOT NULL,
+        "id" INTEGER PRIMARY KEY AUTOINCREMENT,
         "email"	TEXT NOT NULL UNIQUE,
         PRIMARY KEY("id" AUTOINCREMENT)
       );''';

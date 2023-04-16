@@ -79,7 +79,10 @@ class _NotesViewState extends State<NotesView> {
                 builder: (context, snapshot) {
                   switch (snapshot.connectionState) {
                     case ConnectionState.waiting:
-                      return const Text('Waiting for all notes');
+                    case ConnectionState.done:
+                      return const Text(
+                          'Waiting for all notes. If u don\'t have any, create a new one by pressing the + button');
+
                     default:
                       return const CircularProgressIndicator();
                   }
