@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:notes_t_37h_2/services/crud/notes_service.dart';
+import 'package:notes_t_37h_2/views/notes/notes_list_view.dart';
 import 'dart:developer' as devtools show log;
 
+import '../../utilities/dialogs/log_out_dialog.dart';
 import '/services/auth/auth_service.dart';
 import '../../constants/routes.dart';
 import '../../enums/menu_action.dart';
-import '../../utilities/show_log_out_dialogue.dart';
 
 class NotesView extends StatefulWidget {
   const NotesView({super.key});
@@ -22,12 +23,6 @@ class _NotesViewState extends State<NotesView> {
   void initState() {
     _notesService = NotesService();
     super.initState();
-  }
-
-  @override
-  void dispose() {
-    _notesService.close();
-    super.dispose();
   }
 
   @override
@@ -79,10 +74,17 @@ class _NotesViewState extends State<NotesView> {
                 builder: (context, snapshot) {
                   switch (snapshot.connectionState) {
                     case ConnectionState.waiting:
-                    case ConnectionState.done:
-                      return const Text(
-                          'Waiting for all notes. If u don\'t have any, create a new one by pressing the + button');
-
+                    case ConnectionState.active:
+                      if (snapshot.hasData) {
+                        final allNotes = snapshot.data as List<DatabaseNote>;
+                        return NotesListView(
+                            notes: allNotes,
+                            onDeleteNote: (note) async {
+                              await _notesService.deleteNote(id: note.id);
+                            });
+                      } else {
+                        return const CircularProgressIndicator();
+                      }
                     default:
                       return const CircularProgressIndicator();
                   }
