@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'cloud_note.dart';
-import 'cloud_storage_exceptions.dart';
-import 'cloud_storage_constants.dart';
+import '/services/cloud/cloud_note.dart';
+import '/services/cloud/cloud_storage_constants.dart';
+import '/services/cloud/cloud_storage_exceptions.dart';
 
 class FirebaseCloudStorage {
   final notes = FirebaseFirestore.instance.collection('notes');
@@ -26,24 +26,12 @@ class FirebaseCloudStorage {
     }
   }
 
-  Stream<Iterable<CloudNote>> allNotes({required String ownerUserId}) =>
-      notes.snapshots().map((event) => event.docs
-          .map((doc) => CloudNote.fromSnapshot(doc))
-          .where((note) => note.ownerUserId == ownerUserId));
-
-  Future<Iterable<CloudNote>> getNotes({required String ownerUserId}) async {
-    try {
-      return await notes
-          .where(
-            ownerUserIdFieldName,
-            isEqualTo: ownerUserId,
-          )
-          .get()
-          .then(
-              (value) => value.docs.map((doc) => CloudNote.fromSnapshot(doc)));
-    } catch (e) {
-      throw CouldNotGetAllNotesException();
-    }
+  Stream<Iterable<CloudNote>> allNotes({required String ownerUserId}) {
+    final allNotes = notes
+        .where(ownerUserIdFieldName, isEqualTo: ownerUserId)
+        .snapshots()
+        .map((event) => event.docs.map((doc) => CloudNote.fromSnapshot(doc)));
+    return allNotes;
   }
 
   Future<CloudNote> createNewNote({required String ownerUserId}) async {

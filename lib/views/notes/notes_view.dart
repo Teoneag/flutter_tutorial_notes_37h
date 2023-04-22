@@ -1,28 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:notes_t_37h_2/services/auth/bloc/auth_block.dart';
-import 'package:notes_t_37h_2/services/auth/bloc/auth_even.dart';
-import 'package:notes_t_37h_2/services/cloud/firebase_cloud_storage.dart';
-import 'dart:developer' as devtools show log;
 import 'package:flutter_bloc/flutter_bloc.dart' show ReadContext;
 
-import '/services/cloud/cloud_note.dart';
+import '/constants/routes.dart';
+import '/enums/menu_action.dart';
+import '/extensions/buildcontext/loc.dart';
 import '/services/auth/auth_service.dart';
-import 'notes_list_view.dart';
-import '../../utilities/dialogs/log_out_dialog.dart';
-import '../../constants/routes.dart';
-import '../../enums/menu_action.dart';
+import '/services/auth/bloc/auth_bloc.dart';
+import '/services/auth/bloc/auth_event.dart';
+import '/services/cloud/cloud_note.dart';
+import '/services/cloud/firebase_cloud_storage.dart';
+import '/utilities/dialogs/logout_dialog.dart';
+import '/views/notes/notes_list_view.dart';
+
+extension Count<T extends Iterable> on Stream<T> {
+  Stream<int> get getLength => map((event) => event.length);
+}
 
 class NotesView extends StatefulWidget {
-  const NotesView({super.key});
+  const NotesView({Key? key}) : super(key: key);
 
   @override
-  State<NotesView> createState() => _NotesViewState();
+  _NotesViewState createState() => _NotesViewState();
 }
 
 class _NotesViewState extends State<NotesView> {
   late final FirebaseCloudStorage _notesService;
-  String get usreId => AuthService.firebase().currentUser!.id;
+  String get userId => AuthService.firebase().currentUser!.id;
 
   @override
   void initState() {
@@ -34,7 +37,18 @@ class _NotesViewState extends State<NotesView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your notes'),
+        title: StreamBuilder(
+          stream: _notesService.allNotes(ownerUserId: userId).getLength,
+          builder: (context, AsyncSnapshot<int> snapshot) {
+            if (snapshot.hasData) {
+              final noteCount = snapshot.data ?? 0;
+              final text = context.loc.notes_title(noteCount);
+              return Text(text);
+            } else {
+              return const Text('');
+            }
+          },
+        ),
         actions: [
           IconButton(
             onPressed: () {
@@ -43,32 +57,30 @@ class _NotesViewState extends State<NotesView> {
             icon: const Icon(Icons.add),
           ),
           PopupMenuButton<MenuAction>(
-            itemBuilder: (context) {
-              return [
-                const PopupMenuItem(
-                  value: MenuAction.logout,
-                  child: Text('Log out'),
-                )
-              ];
-            },
             onSelected: (value) async {
               switch (value) {
                 case MenuAction.logout:
                   final shouldLogout = await showLogOutDialog(context);
-                  devtools.log('Shouldlogout: $shouldLogout');
                   if (shouldLogout) {
                     context.read<AuthBloc>().add(
                           const AuthEventLogOut(),
                         );
                   }
-                  break;
               }
+            },
+            itemBuilder: (context) {
+              return [
+                PopupMenuItem<MenuAction>(
+                  value: MenuAction.logout,
+                  child: Text(context.loc.logout_button),
+                ),
+              ];
             },
           )
         ],
       ),
       body: StreamBuilder(
-        stream: _notesService.allNotes(ownerUserId: usreId),
+        stream: _notesService.allNotes(ownerUserId: userId),
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.waiting:
@@ -81,8 +93,10 @@ class _NotesViewState extends State<NotesView> {
                     await _notesService.deleteNote(documentId: note.documentId);
                   },
                   onTap: (note) {
-                    Navigator.of(context)
-                        .pushNamed(createOrUpdateNoteRoute, arguments: note);
+                    Navigator.of(context).pushNamed(
+                      createOrUpdateNoteRoute,
+                      arguments: note,
+                    );
                   },
                 );
               } else {

@@ -56,6 +56,7 @@ class DefaultFirebaseOptions {
     projectId: 'notes-t',
     authDomain: 'notes-t-d2bca.firebaseapp.com',
     storageBucket: 'notes-t.appspot.com',
+    measurementId: 'G-BR8E367JHD',
   );
 
   static const FirebaseOptions android = FirebaseOptions(

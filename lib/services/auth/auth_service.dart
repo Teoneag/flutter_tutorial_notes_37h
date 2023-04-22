@@ -1,7 +1,6 @@
-import 'package:notes_t_37h_2/services/auth/firebase_auth_provider.dart';
-
-import 'auth_provider.dart';
-import 'auth_user.dart';
+import '/services/auth/auth_provider.dart';
+import '/services/auth/auth_user.dart';
+import '/services/auth/firebase_auth_provider.dart';
 
 class AuthService implements AuthProvider {
   final AuthProvider provider;
@@ -40,4 +39,8 @@ class AuthService implements AuthProvider {
 
   @override
   Future<void> initialize() => provider.initialize();
+
+  @override
+  Future<void> sendPasswordReset({required String toEmail}) =>
+      provider.sendPasswordReset(toEmail: toEmail);
 }

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:notes_t_37h_2/constants/routes.dart';
-import 'package:notes_t_37h_2/services/auth/auth_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '/extensions/buildcontext/loc.dart';
+import '/services/auth/bloc/auth_bloc.dart';
+import '/services/auth/bloc/auth_event.dart';
 
 class VerifyEmailView extends StatefulWidget {
-  const VerifyEmailView({super.key});
+  const VerifyEmailView({Key? key}) : super(key: key);
 
   @override
-  State<VerifyEmailView> createState() => _VerifyEmailViewState();
+  _VerifyEmailViewState createState() => _VerifyEmailViewState();
 }
 
 class _VerifyEmailViewState extends State<VerifyEmailView> {
@@ -14,32 +17,39 @@ class _VerifyEmailViewState extends State<VerifyEmailView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verify email!'),
+        title: Text(context.loc.verify_email),
       ),
-      body: Column(
-        children: [
-          const Text(
-              "We've send you an email verification. Please open it in order to verify ur account."),
-          const Text(
-              "If u haven't received a verification email yet, press the botton bellow."),
-          TextButton(
-            onPressed: () async {
-              await AuthService.firebase().sendEmailVerification();
-              // FirebaseAuthException ([firebase_auth/too-many-requests] We have blocked all requests from this device due to unusual activity. Try again later.)
-            },
-            child: const Text('Send email verification'),
-          ),
-          TextButton(
-            onPressed: () async {
-              await AuthService.firebase().logOut();
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                registerRoute,
-                (route) => false,
-              );
-            },
-            child: const Text('Restart'),
-          ),
-        ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                context.loc.verify_email_view_prompt,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                context.read<AuthBloc>().add(
+                      const AuthEventSendEmailVerification(),
+                    );
+              },
+              child: Text(
+                context.loc.verify_email_send_email_verification,
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                context.read<AuthBloc>().add(
+                      const AuthEventLogOut(),
+                    );
+              },
+              child: Text(
+                context.loc.restart,
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

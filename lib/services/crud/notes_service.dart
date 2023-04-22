@@ -1,10 +1,11 @@
-// import 'package:flutter/material.dart';
-// import 'package:notes_t_37h_2/extensions/list/filter.dart';
 // import 'dart:async';
+
+// import 'package:flutter/foundation.dart';
+// import 'package:mynotes/extensions/list/filter.dart';
+// import 'package:mynotes/services/crud/crud_exceptions.dart';
 // import 'package:sqflite/sqflite.dart';
 // import 'package:path_provider/path_provider.dart';
-
-// import 'crud_exceptions.dart';
+// import 'package:path/path.dart' show join;
 
 // class NotesService {
 //   Database? _db;
@@ -25,11 +26,11 @@
 
 //   late final StreamController<List<DatabaseNote>> _notesStreamController;
 
-//   Stream<List<DatabaseNote>> get allnodes =>
+//   Stream<List<DatabaseNote>> get allNotes =>
 //       _notesStreamController.stream.filter((note) {
-//         final currentUesr = _user;
-//         if (currentUesr != null) {
-//           return note.userId == currentUesr.id;
+//         final currentUser = _user;
+//         if (currentUser != null) {
+//           return note.userId == currentUser.id;
 //         } else {
 //           throw UserShouldBeSetBeforeReadingAllNotes();
 //         }
@@ -68,14 +69,16 @@
 //   }) async {
 //     await _ensureDbIsOpen();
 //     final db = _getDatabaseOrThrow();
+
 //     // make sure note exists
 //     await getNote(id: note.id);
-//     // updtate db
+
+//     // update DB
 //     final updatesCount = await db.update(
 //       noteTable,
 //       {
 //         textColumn: text,
-//         isSyncedWithClaudColumn: 0,
+//         isSyncedWithCloudColumn: 0,
 //       },
 //       where: 'id = ?',
 //       whereArgs: [note.id],
@@ -95,9 +98,8 @@
 //   Future<Iterable<DatabaseNote>> getAllNotes() async {
 //     await _ensureDbIsOpen();
 //     final db = _getDatabaseOrThrow();
-//     final notes = await db.query(
-//       noteTable,
-//     );
+//     final notes = await db.query(noteTable);
+
 //     return notes.map((noteRow) => DatabaseNote.fromRow(noteRow));
 //   }
 
@@ -110,6 +112,7 @@
 //       where: 'id = ?',
 //       whereArgs: [id],
 //     );
+
 //     if (notes.isEmpty) {
 //       throw CouldNotFindNote();
 //     } else {
@@ -124,21 +127,21 @@
 //   Future<int> deleteAllNotes() async {
 //     await _ensureDbIsOpen();
 //     final db = _getDatabaseOrThrow();
-//     final nrOfDeletions = await db.delete(noteTable);
+//     final numberOfDeletions = await db.delete(noteTable);
 //     _notes = [];
 //     _notesStreamController.add(_notes);
-//     return nrOfDeletions;
+//     return numberOfDeletions;
 //   }
 
 //   Future<void> deleteNote({required int id}) async {
 //     await _ensureDbIsOpen();
 //     final db = _getDatabaseOrThrow();
-//     final deleteCount = await db.delete(
+//     final deletedCount = await db.delete(
 //       noteTable,
 //       where: 'id = ?',
 //       whereArgs: [id],
 //     );
-//     if (deleteCount == 0) {
+//     if (deletedCount == 0) {
 //       throw CouldNotDeleteNote();
 //     } else {
 //       _notes.removeWhere((note) => note.id == id);
@@ -149,41 +152,45 @@
 //   Future<DatabaseNote> createNote({required DatabaseUser owner}) async {
 //     await _ensureDbIsOpen();
 //     final db = _getDatabaseOrThrow();
+
 //     // make sure owner exists in the database with the correct id
 //     final dbUser = await getUser(email: owner.email);
 //     if (dbUser != owner) {
 //       throw CouldNotFindUser();
 //     }
+
 //     const text = '';
-//     // create note
+//     // create the note
 //     final noteId = await db.insert(noteTable, {
 //       userIdColumn: owner.id,
 //       textColumn: text,
-//       isSyncedWithClaudColumn: 1,
+//       isSyncedWithCloudColumn: 1,
 //     });
+
 //     final note = DatabaseNote(
 //       id: noteId,
 //       userId: owner.id,
 //       text: text,
 //       isSyncedWithCloud: true,
 //     );
+
 //     _notes.add(note);
 //     _notesStreamController.add(_notes);
+
 //     return note;
 //   }
 
 //   Future<DatabaseUser> getUser({required String email}) async {
 //     await _ensureDbIsOpen();
 //     final db = _getDatabaseOrThrow();
-//     // if (db == null) {
-//     //   throw DatabaseIsNotOpened();
-//     // }
+
 //     final results = await db.query(
 //       userTable,
 //       limit: 1,
 //       where: 'email = ?',
 //       whereArgs: [email.toLowerCase()],
 //     );
+
 //     if (results.isEmpty) {
 //       throw CouldNotFindUser();
 //     } else {
@@ -201,12 +208,17 @@
 //       whereArgs: [email.toLowerCase()],
 //     );
 //     if (results.isNotEmpty) {
-//       throw UserAlreadyExistsException();
+//       throw UserAlreadyExists();
 //     }
+
 //     final userId = await db.insert(userTable, {
-//       emailColum: email.toLowerCase(),
+//       emailColumn: email.toLowerCase(),
 //     });
-//     return DatabaseUser(id: userId, email: email);
+
+//     return DatabaseUser(
+//       id: userId,
+//       email: email,
+//     );
 //   }
 
 //   Future<void> deleteUser({required String email}) async {
@@ -225,7 +237,7 @@
 //   Database _getDatabaseOrThrow() {
 //     final db = _db;
 //     if (db == null) {
-//       throw DatabaseIsNotOpened();
+//       throw DatabaseIsNotOpen();
 //     } else {
 //       return db;
 //     }
@@ -234,7 +246,7 @@
 //   Future<void> close() async {
 //     final db = _db;
 //     if (db == null) {
-//       throw DatabaseIsNotOpened();
+//       throw DatabaseIsNotOpen();
 //     } else {
 //       await db.close();
 //       _db = null;
@@ -255,16 +267,13 @@
 //     }
 //     try {
 //       final docsPath = await getApplicationDocumentsDirectory();
-//       // final dbPath = join(docsPath.path, dbName);
-//       final dbPath = docsPath.path + dbName;
+//       final dbPath = join(docsPath.path, dbName);
 //       final db = await openDatabase(dbPath);
 //       _db = db;
-
-//       // create user table
+//       // create the user table
 //       await db.execute(createUserTable);
-
 //       // create note table
-//       await db.execute(createNotesTable);
+//       await db.execute(createNoteTable);
 //       await _cacheNotes();
 //     } on MissingPlatformDirectoryException {
 //       throw UnableToGetDocumentsDirectory();
@@ -276,14 +285,15 @@
 // class DatabaseUser {
 //   final int id;
 //   final String email;
-
 //   const DatabaseUser({
 //     required this.id,
 //     required this.email,
 //   });
+
 //   DatabaseUser.fromRow(Map<String, Object?> map)
-//       : id = map[idColum] as int,
-//         email = map[emailColum] as String;
+//       : id = map[idColumn] as int,
+//         email = map[emailColumn] as String;
+
 //   @override
 //   String toString() => 'Person, ID = $id, email = $email';
 
@@ -308,14 +318,15 @@
 //   });
 
 //   DatabaseNote.fromRow(Map<String, Object?> map)
-//       : id = map[idColum] as int,
+//       : id = map[idColumn] as int,
 //         userId = map[userIdColumn] as int,
 //         text = map[textColumn] as String,
 //         isSyncedWithCloud =
-//             (map[isSyncedWithClaudColumn] as int) == 1 ? true : false;
+//             (map[isSyncedWithCloudColumn] as int) == 1 ? true : false;
+
 //   @override
 //   String toString() =>
-//       'Note, ID = $id, userId = $userId, isSyncedWithCoud = $isSyncedWithCloud, text = $text';
+//       'Note, ID = $id, userId = $userId, isSyncedWithCloud = $isSyncedWithCloud, text = $text';
 
 //   @override
 //   bool operator ==(covariant DatabaseNote other) => id == other.id;
@@ -327,19 +338,21 @@
 // const dbName = 'notes.db';
 // const noteTable = 'note';
 // const userTable = 'user';
-// const idColum = 'id';
-// const emailColum = 'email';
+// const idColumn = 'id';
+// const emailColumn = 'email';
 // const userIdColumn = 'user_id';
 // const textColumn = 'text';
-// const isSyncedWithClaudColumn = 'is_synced_with_cloud';
-// const createNotesTable = '''CREATE TABLE IF NOT EXISTS "note" (
-//         "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+// const isSyncedWithCloudColumn = 'is_synced_with_cloud';
+// const createUserTable = '''CREATE TABLE IF NOT EXISTS "user" (
+//         "id"	INTEGER NOT NULL,
+//         "email"	TEXT NOT NULL UNIQUE,
+//         PRIMARY KEY("id" AUTOINCREMENT)
+//       );''';
+// const createNoteTable = '''CREATE TABLE IF NOT EXISTS "note" (
+//         "id"	INTEGER NOT NULL,
 //         "user_id"	INTEGER NOT NULL,
 //         "text"	TEXT,
 //         "is_synced_with_cloud"	INTEGER NOT NULL DEFAULT 0,
-//         FOREIGN KEY("user_id") REFERENCES "User"("id")
-//       );''';
-// const createUserTable = '''CREATE TABLE IF NOT EXISTS "user" (
-//         "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-//         "email"	TEXT NOT NULL UNIQUE
+//         FOREIGN KEY("user_id") REFERENCES "user"("id"),
+//         PRIMARY KEY("id" AUTOINCREMENT)
 //       );''';
